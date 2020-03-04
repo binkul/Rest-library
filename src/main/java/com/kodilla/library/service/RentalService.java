@@ -1,10 +1,12 @@
 package com.kodilla.library.service;
 
 import com.kodilla.library.domain.*;
+import com.kodilla.library.domain.dto.BookRentalDto;
 import com.kodilla.library.domain.exception.book.BookCopyNotAvailableException;
 import com.kodilla.library.domain.exception.book.ErrorMessages;
 import com.kodilla.library.domain.exception.book.RecordNotFoundException;
 import com.kodilla.library.domain.simple.BookRental;
+import com.kodilla.library.mapper.RentalMapper;
 import com.kodilla.library.repository.BookCopyRepository;
 import com.kodilla.library.repository.BookRepository;
 import com.kodilla.library.repository.ReaderRepository;
@@ -27,21 +29,28 @@ public class RentalService {
     private BookCopyRepository bookCopyRepository;
     @Autowired
     private RentalRepository rentalRepository;
+    @Autowired
+    private RentalMapper rentalMapper;
 
-    public List<BookRental> getRentals() {
+    public List<BookRentalDto> getRentals() {
         List<Rental> rentals = rentalRepository.findAll();
-        return rentals.stream()
-                .map(i -> new BookRental(i.getId(), i.getRentDate(), i.getReturnDate(), i.getName(), i.getLastName(), i.getTitle(), i.getStatus().toString()))
-                .collect(Collectors.toList());
+        return rentalMapper.mapToBookRentalDtoList(
+                rentals.stream()
+                    .map(this::getNewBookRental)
+                    .collect(Collectors.toList())
+        );
     }
 
-    public BookRental createRent(BookRental bookRental) {
+    public BookRentalDto createRent(BookRentalDto bookRentalDto) {
+        BookRental bookRental = rentalMapper.mapToBookRental(bookRentalDto);
         String name = bookRental.getName();
         String lastName = bookRental.getLastName();
         String title = bookRental.getTitle();
 
-        Reader reader = readerRepository.findByNameAndLastName(name, lastName).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.READER_ERROR, name, lastName)));
-        List<Book> books = bookRepository.findByTitle(title).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
+        Reader reader = readerRepository.findByNameAndLastName(name, lastName)
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.READER_ERROR, name, lastName)));
+        List<Book> books = bookRepository.findByTitle(title)
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
         BookCopy bookCopy = getFirstBookCopy(books, title);
 
         bookCopy.setStatus(Status.LOAN);
@@ -49,12 +58,15 @@ public class RentalService {
         Rental rental = new Rental(bookCopy, reader, LocalDate.now());
         rentalRepository.save(rental);
 
-        return new BookRental(rental.getId(), rental.getRentDate(), rental.getReturnDate(), name, lastName, title, bookCopy.getStatus().toString());
+        BookRental result = new BookRental(rental.getId(), rental.getRentDate(), rental.getReturnDate(), name, lastName, title, bookCopy.getStatus().toString());
+        return rentalMapper.mapToBookRentalDto(result);
     }
 
-    public BookRental returnBook(BookRental bookRental) {
-        Rental rental = rentalRepository.findById(bookRental.getId()).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.RENT_ERROR, Long.toString(bookRental.getId()))));
-        Status status = Status.getStatus(bookRental.getStatus());
+    public BookRentalDto returnBook(BookRentalDto bookRentalDto) {
+        BookRental bookRental = rentalMapper.mapToBookRental(bookRentalDto);
+        Rental rental = rentalRepository.findById(bookRental.getId())
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.RENT_ERROR, Long.toString(bookRental.getId()))));
+        Status status = Status.getStatus(rentalMapper.mapToBookRental(bookRentalDto).getStatus());
         BookCopy bookCopy = rental.getBookCopy();
 
         if (status == Status.RETURN) {
@@ -68,7 +80,9 @@ public class RentalService {
         rental.setReturnDate(LocalDate.now());
         rentalRepository.save(rental);
 
-        return new BookRental(rental.getId(), rental.getRentDate(), rental.getReturnDate(), rental.getName(), rental.getLastName(), rental.getTitle(), bookCopy.getStatus().toString());
+        BookRental result = new BookRental(rental.getId(), rental.getRentDate(), rental.getReturnDate(), rental.getName(), rental.getLastName(), rental.getTitle(), bookCopy.getStatus().toString());
+
+        return rentalMapper.mapToBookRentalDto(result);
     }
 
     private BookCopy getFirstBookCopy(List<Book> books, String title) {
@@ -77,5 +91,9 @@ public class RentalService {
                 .flatMap(Collection::stream)
                 .findFirst()
                 .orElseThrow(() -> new BookCopyNotAvailableException(title));
+    }
+
+    private BookRental getNewBookRental(Rental rental) {
+        return new BookRental(rental.getId(), rental.getRentDate(), rental.getReturnDate(), rental.getName(), rental.getLastName(), rental.getTitle(), rental.getStatus().toString());
     }
 }

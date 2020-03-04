@@ -3,10 +3,15 @@ package com.kodilla.library.service;
 import com.kodilla.library.domain.Book;
 import com.kodilla.library.domain.BookCopy;
 import com.kodilla.library.domain.Status;
+import com.kodilla.library.domain.dto.BookCopyDto;
+import com.kodilla.library.domain.dto.BookDto;
+import com.kodilla.library.domain.dto.BookStatusDto;
+import com.kodilla.library.domain.dto.BookWithCopyDto;
 import com.kodilla.library.domain.exception.book.ErrorMessages;
 import com.kodilla.library.domain.exception.book.RecordNotFoundException;
-import com.kodilla.library.domain.simple.BookStatus;
 import com.kodilla.library.domain.simple.BookWithCopy;
+import com.kodilla.library.mapper.BookCopyMapper;
+import com.kodilla.library.mapper.BookMapper;
 import com.kodilla.library.repository.BookCopyRepository;
 import com.kodilla.library.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,24 +26,35 @@ public class BookCopyService {
     private BookCopyRepository bookCopyRepository;
     @Autowired
     private BookRepository bookRepository;
+    @Autowired
+    private BookCopyMapper bookCopyMapper;
+    @Autowired
+    private BookMapper bookMapper;
 
-    public List<BookWithCopy> getBookCopies(String title) {
-        List<Book> books = bookRepository.findByTitle(title).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
+    public List<BookWithCopyDto> getBookCopies(String title) {
+        List<Book> books = bookRepository.findByTitle(title)
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
 
-        return books.stream()
-                .map(i -> new BookWithCopy(i.getId(), i.getTitle(), i.getAuthor(), i.getPublished(), bookCopyRepository.findByBook(i)))
-                .collect(Collectors.toList());
+        return bookMapper.mapToBookWithCopyDtoList(
+                books.stream()
+                    .map(this::findAllBooks)
+                    .collect(Collectors.toList())
+        );
     }
 
-    public List<BookWithCopy> getAvailableCopy(String title) {
-        List<Book> books = bookRepository.findByTitle(title).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
+    public List<BookWithCopyDto> getAvailableCopy(String title) {
+        List<Book> books = bookRepository.findByTitle(title)
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
 
-        return books.stream()
-                .map(i -> new BookWithCopy(i.getId(), i.getTitle(), i.getAuthor(), i.getPublished(), bookCopyRepository.findByBookAndStatus(i, Status.READY)))
-                .collect(Collectors.toList());
+        return bookMapper.mapToBookWithCopyDtoList(
+                books.stream()
+                    .map(this::findAvailableBooks)
+                    .collect(Collectors.toList())
+        );
     }
 
-    public String addBookCopy(Book book) {
+    public String addBookCopy(BookDto bookDto) {
+        Book book = bookMapper.mapToBook(bookDto);
         Book newCopy = bookRepository.findByTitleAndPublished(book.getTitle(), book.getPublished()).orElse(null);
 
         if (newCopy != null) {
@@ -49,15 +65,25 @@ public class BookCopyService {
         }
     }
 
-    public BookCopy updateStatus(BookStatus bookStatus) {
-        Long id = bookStatus.getId();
-        String status = bookStatus.getStatus();
-
-        BookCopy bookCopy = bookCopyRepository.findById(id).orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.COPY_ERROR, Long.toString(id))));
+    public BookCopyDto updateStatus(BookStatusDto bookStatusDto) {
+        Long id = bookCopyMapper.mapToBookStatus(bookStatusDto).getId();
+        String status = bookCopyMapper.mapToBookStatus(bookStatusDto).getStatus();
         Status newStatus = Status.getStatus(status);
+
+        BookCopy bookCopy = bookCopyRepository.findById(id)
+                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.COPY_ERROR, Long.toString(id))));
 
         bookCopy.setStatus(newStatus);
         bookCopyRepository.save(bookCopy);
-        return bookCopy;
+
+        return bookCopyMapper.mapToBookCopyDto(bookCopy);
+    }
+
+    private BookWithCopy findAllBooks(Book book) {
+        return new BookWithCopy(book.getId(), book.getTitle(), book.getAuthor(), book.getPublished(), bookCopyRepository.findByBook(book));
+    }
+
+    private BookWithCopy findAvailableBooks(Book book) {
+        return new BookWithCopy(book.getId(), book.getTitle(), book.getAuthor(), book.getPublished(), bookCopyRepository.findByBookAndStatus(book, Status.READY));
     }
 }
