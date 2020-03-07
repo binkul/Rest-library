@@ -1,6 +1,6 @@
 package com.kodilla.library.domain;
 
-import com.kodilla.library.domain.exception.book.RecordNotFoundException;
+import com.kodilla.library.domain.exception.book.EntityNotFoundException;
 
 import java.util.stream.Stream;
 
@@ -16,7 +16,7 @@ public enum Status {
         return Stream.of(Status.values())
             .filter(i -> i.name().equals(status.toUpperCase()))
             .findFirst()
-            .orElseThrow(() -> new RecordNotFoundException("Could not find status name: '" + status + "'. Available are READY, LOAN, LOST, LOST_PAID, DESTROYED, RETURN."));
+            .orElseThrow(() -> new EntityNotFoundException("Could not find status name: '" + status + "'. Available are READY, LOAN, LOST, LOST_PAID, DESTROYED, RETURN."));
     }
 
 }

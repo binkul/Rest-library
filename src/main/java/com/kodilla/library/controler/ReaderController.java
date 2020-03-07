@@ -9,30 +9,28 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/library")
+@RequestMapping("/v1/library/reader")
 public class ReaderController {
     @Autowired
     private ReaderService readerService;
 
-    @GetMapping("getReaders")
+    @GetMapping("/all")
     List<ReaderDto> getReaders() {
-        return readerService.getReaders();
+        return readerService.getAll();
     }
 
-    @GetMapping("getReader/{id}")
+    @GetMapping("/{id}")
     ReaderDto getReader(@PathVariable Long id) {
         return readerService.getReader(id);
     }
 
-    @GetMapping("getReader/{name}/{lastName}")
-    ReaderDto getReader(@PathVariable String name, @PathVariable String lastName) {
+    @GetMapping
+    ReaderDto getReader(@RequestParam(required = true) String name, @RequestParam(required = true) String lastName) {
         return readerService.getReader(name, lastName);
     }
 
-    @PostMapping(value = "addReader", consumes = MediaType.APPLICATION_JSON_VALUE)
-    String addReader(@RequestBody ReaderDto readerDto) {
-        readerService.addReader(readerDto);
-        return "New reader: " + readerDto.getName() + " " + readerDto.getLastName() + " successfully added to library.";
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    ReaderDto create(@RequestBody ReaderDto readerDto) {
+        return readerService.save(readerDto);
     }
-
 }

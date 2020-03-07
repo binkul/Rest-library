@@ -3,13 +3,13 @@ package com.kodilla.library.service;
 import com.kodilla.library.domain.Book;
 import com.kodilla.library.domain.BookCopy;
 import com.kodilla.library.domain.Status;
+import com.kodilla.library.domain.dto.BookAndCopyDto;
 import com.kodilla.library.domain.dto.BookCopyDto;
 import com.kodilla.library.domain.dto.BookDto;
 import com.kodilla.library.domain.dto.BookStatusDto;
-import com.kodilla.library.domain.dto.BookWithCopyDto;
+import com.kodilla.library.domain.exception.book.EntityNotFoundException;
 import com.kodilla.library.domain.exception.book.ErrorMessages;
-import com.kodilla.library.domain.exception.book.RecordNotFoundException;
-import com.kodilla.library.domain.simple.BookWithCopy;
+import com.kodilla.library.domain.simple.BookAndCopy;
 import com.kodilla.library.mapper.BookCopyMapper;
 import com.kodilla.library.mapper.BookMapper;
 import com.kodilla.library.repository.BookCopyRepository;
@@ -31,59 +31,50 @@ public class BookCopyService {
     @Autowired
     private BookMapper bookMapper;
 
-    public List<BookWithCopyDto> getBookCopies(String title) {
+    public List<BookAndCopyDto> getAll(String title) {
         List<Book> books = bookRepository.findByTitle(title)
-                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
+                .orElseThrow(() -> new EntityNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
 
-        return bookMapper.mapToBookWithCopyDtoList(
-                books.stream()
-                    .map(this::findAllBooks)
-                    .collect(Collectors.toList())
-        );
+        List<BookAndCopy> copies = getCopies(books);
+        copies.forEach(i -> i.setBookCopies(bookCopyRepository.findByBook(i.getBook())));
+
+        return bookMapper.mapToBookAndCopyDtoList(copies);
     }
 
-    public List<BookWithCopyDto> getAvailableCopy(String title) {
+    public List<BookAndCopyDto> getAvailable(String title) {
         List<Book> books = bookRepository.findByTitle(title)
-                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
+                .orElseThrow(() -> new EntityNotFoundException(String.format(ErrorMessages.BOOK_ERROR, title)));
 
-        return bookMapper.mapToBookWithCopyDtoList(
-                books.stream()
-                    .map(this::findAvailableBooks)
-                    .collect(Collectors.toList())
-        );
+        List<BookAndCopy> copies = getCopies(books);
+        copies.forEach(i -> i.setBookCopies(bookCopyRepository.findByBookAndStatus(i.getBook(), Status.READY)));
+
+        return bookMapper.mapToBookAndCopyDtoList(copies);
     }
 
-    public String addBookCopy(BookDto bookDto) {
-        Book book = bookMapper.mapToBook(bookDto);
-        Book newCopy = bookRepository.findByTitleAndPublished(book.getTitle(), book.getPublished()).orElse(null);
-
-        if (newCopy != null) {
-            bookCopyRepository.save(new BookCopy(newCopy, Status.READY));
-            return "A copy of the book: " + book.getTitle() + " was successfully added to library database.";
-        } else {
-            return "A book: " + book.getTitle() + " does not exists in library database.";
-        }
+    private List<BookAndCopy> getCopies(List<Book> books) {
+        return books.stream()
+                .map(BookAndCopy::new)
+                .collect(Collectors.toList());
     }
 
-    public BookCopyDto updateStatus(BookStatusDto bookStatusDto) {
-        Long id = bookCopyMapper.mapToBookStatus(bookStatusDto).getId();
-        String status = bookCopyMapper.mapToBookStatus(bookStatusDto).getStatus();
+    public BookCopyDto save(BookDto bookDto) {
+        Book newCopy = bookRepository.findByTitleAndPublished(bookDto.getTitle(), bookDto.getPublished())
+                .orElseThrow(() -> new EntityNotFoundException(String.format(ErrorMessages.BOOK_ERROR, bookDto.getTitle())));
+
+        return bookCopyMapper.mapToBookCopyDto(bookCopyRepository.save(new BookCopy(newCopy, Status.READY)));
+     }
+
+    public BookCopyDto update(BookStatusDto bookStatusDto) {
+        Long id = bookStatusDto.getId();
+        String status = bookStatusDto.getStatus();
         Status newStatus = Status.getStatus(status);
 
         BookCopy bookCopy = bookCopyRepository.findById(id)
-                .orElseThrow(() -> new RecordNotFoundException(String.format(ErrorMessages.COPY_ERROR, Long.toString(id))));
+                .orElseThrow(() -> new EntityNotFoundException(String.format(ErrorMessages.COPY_ERROR, Long.toString(id))));
 
         bookCopy.setStatus(newStatus);
         bookCopyRepository.save(bookCopy);
 
         return bookCopyMapper.mapToBookCopyDto(bookCopy);
-    }
-
-    private BookWithCopy findAllBooks(Book book) {
-        return new BookWithCopy(book.getId(), book.getTitle(), book.getAuthor(), book.getPublished(), bookCopyRepository.findByBook(book));
-    }
-
-    private BookWithCopy findAvailableBooks(Book book) {
-        return new BookWithCopy(book.getId(), book.getTitle(), book.getAuthor(), book.getPublished(), bookCopyRepository.findByBookAndStatus(book, Status.READY));
     }
 }

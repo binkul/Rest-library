@@ -2,8 +2,8 @@ package com.kodilla.library.mapper;
 
 import com.kodilla.library.domain.Book;
 import com.kodilla.library.domain.dto.BookDto;
-import com.kodilla.library.domain.dto.BookWithCopyDto;
-import com.kodilla.library.domain.simple.BookWithCopy;
+import com.kodilla.library.domain.dto.BookAndCopyDto;
+import com.kodilla.library.domain.simple.BookAndCopy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,9 +25,9 @@ public class BookMapper {
                 .collect(Collectors.toList());
     }
 
-    public List<BookWithCopyDto> mapToBookWithCopyDtoList(List<BookWithCopy> books) {
+    public List<BookAndCopyDto> mapToBookAndCopyDtoList(List<BookAndCopy> books) {
         return books.stream()
-                .map(i -> new BookWithCopyDto(i.getId(), i.getTitle(), i.getAuthor(),  i.getPublished(), i.getCopies().size()))
+                .map(i -> new BookAndCopyDto(i.getBook(), i.getBookCopies().size()))
                 .collect(Collectors.toList());
     }
 }

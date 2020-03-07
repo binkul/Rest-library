@@ -5,10 +5,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class BookWithCopyDto {
-    private Long id;
+public class BookOrderDto {
+    private String name;
+    private String lastName;
     private String title;
-    private String author;
-    private int published;
-    private int copies;
 }

@@ -9,33 +9,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/library")
+@RequestMapping("/v1/library/book")
 public class BookController {
     @Autowired
     private BookService bookService;
 
-    @GetMapping("getBooks")
+    @GetMapping("/all")
     List<BookDto> getBooks() {
-        return  bookService.getAllBooks();
+        return  bookService.getAll();
     }
 
-    @GetMapping("getBookTitle/{title}")
-    List<BookDto> getBook(@PathVariable String title) {
-        return bookService.getAllBookByTitle(title);
+    @GetMapping
+    List<BookDto> getBook(@RequestParam(required = true) String title) {
+        return bookService.getAll(title);
     }
 
-    @GetMapping("getBook/{id}")
+    @GetMapping("/{id}")
     BookDto getBook(@PathVariable Long id) {
         return bookService.getBook(id);
     }
 
-    @GetMapping("getBookTitle/{title}/{published}")
-    BookDto getBook(@PathVariable String title, @PathVariable int published) {
-        return bookService.getBookByTitleAndYear(title, published);
+    @GetMapping("specify")
+    BookDto getBook(@RequestParam(required = true) String title, @RequestParam int published) {
+        return bookService.getBook(title, published);
     }
 
-    @PostMapping(value = "addBook", consumes = MediaType.APPLICATION_JSON_VALUE)
-    String addBook(@RequestBody BookDto bookDto) {
-        return bookService.saveBook(bookDto);
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    BookDto create(@RequestBody BookDto bookDto) {
+        return bookService.save(bookDto);
     }
 }

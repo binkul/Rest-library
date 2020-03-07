@@ -1,6 +1,8 @@
 package com.kodilla.library.controler;
 
-import com.kodilla.library.domain.dto.BookRentalDto;
+import com.kodilla.library.domain.dto.BookOrderDto;
+import com.kodilla.library.domain.dto.BookReturnDto;
+import com.kodilla.library.domain.dto.RentalDto;
 import com.kodilla.library.service.RentalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -9,23 +11,28 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/library")
+@RequestMapping("/v1/library/rent")
 public class RentalController {
     @Autowired
     private RentalService rentalService;
 
-    @GetMapping("getRentals")
-    List<BookRentalDto> getRentals() {
-        return rentalService.getRentals();
+    @GetMapping
+    List<RentalDto> getRentals() {
+        return rentalService.getAll();
     }
 
-    @PostMapping(value = "createRent", consumes = MediaType.APPLICATION_JSON_VALUE)
-    BookRentalDto createRent(@RequestBody BookRentalDto bookRentalDto) {
-        return rentalService.createRent(bookRentalDto);
+    @GetMapping("/{id}")
+    RentalDto getRental(@PathVariable Long id) {
+        return rentalService.getRental(id);
     }
 
-    @PutMapping(value = "returnBook", consumes = MediaType.APPLICATION_JSON_VALUE)
-    BookRentalDto returnBook(@RequestBody BookRentalDto bookRentalDto) {
-        return rentalService.returnBook(bookRentalDto);
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    RentalDto create(@RequestBody BookOrderDto bookOrderDto) {
+        return rentalService.save(bookOrderDto);
+    }
+
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    RentalDto update(@RequestBody BookReturnDto bookReturnDto) {
+        return rentalService.update(bookReturnDto);
     }
 }

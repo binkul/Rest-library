@@ -1,7 +1,7 @@
 package com.kodilla.library.mapper;
 
-import com.kodilla.library.domain.dto.BookRentalDto;
-import com.kodilla.library.domain.simple.BookRental;
+import com.kodilla.library.domain.Rental;
+import com.kodilla.library.domain.dto.RentalDto;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,22 +9,13 @@ import java.util.stream.Collectors;
 
 @Component
 public class RentalMapper {
-
-    public BookRental mapToBookRental(BookRentalDto bookRentalDto) {
-        return new BookRental(bookRentalDto.getId(), bookRentalDto.getRentDate(), bookRentalDto.getReturnDate(),
-                bookRentalDto.getName(), bookRentalDto.getLastName(), bookRentalDto.getTitle(), bookRentalDto.getStatus());
+    public RentalDto mapToRentalDto(Rental rental) {
+        return new RentalDto(rental.getId(), rental.getBookCopy(), rental.getReader(), rental.getRentDate(), rental.getReturnDate());
     }
 
-    public BookRentalDto mapToBookRentalDto(BookRental bookRental) {
-        return new BookRentalDto(bookRental.getId(), bookRental.getRentDate(), bookRental.getReturnDate(),
-                bookRental.getName(), bookRental.getLastName(), bookRental.getTitle(), bookRental.getStatus());
-    }
-
-    public List<BookRentalDto> mapToBookRentalDtoList(List<BookRental> books) {
-        return books.stream()
-                .map(i -> new BookRentalDto(i.getId(), i.getRentDate(), i.getReturnDate(), i.getName(), i.getLastName(), i.getTitle(), i.getStatus()))
+    public List<RentalDto> mapToRentalDtoList(List<Rental> rentals) {
+        return rentals.stream()
+                .map(i -> new RentalDto(i.getId(), i.getBookCopy(), i.getReader(), i.getRentDate(), i.getReturnDate()))
                 .collect(Collectors.toList());
     }
-
-
 }

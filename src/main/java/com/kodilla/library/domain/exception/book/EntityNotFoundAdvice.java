@@ -6,11 +6,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class BookCopyNotAvailableAdvice {
+public class EntityNotFoundAdvice {
 
-    @ExceptionHandler(BookCopyNotAvailableException.class)
+    @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String bookNotFoundHandler(BookCopyNotAvailableException ex) {
+    public String readerNotFoundHandler(EntityNotFoundException ex) {
         return ex.getMessage();
     }
 }

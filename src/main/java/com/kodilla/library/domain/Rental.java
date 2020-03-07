@@ -37,22 +37,6 @@ public class Rental {
         this.rentDate = rentDate;
     }
 
-    public String getTitle() {
-        return bookCopy.getBook().getTitle();
-    }
-
-    public String getName() {
-        return reader.getName();
-    }
-
-    public String getLastName() {
-        return reader.getLastName();
-    }
-
-    public Status getStatus() {
-        return bookCopy.getStatus();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
