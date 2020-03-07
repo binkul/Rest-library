@@ -4,7 +4,6 @@ import com.kodilla.library.domain.*;
 import com.kodilla.library.domain.dto.BookOrderDto;
 import com.kodilla.library.domain.dto.BookReturnDto;
 import com.kodilla.library.domain.dto.RentalDto;
-import com.kodilla.library.domain.exception.book.BookCopyNotAvailableException;
 import com.kodilla.library.domain.exception.book.EntityNotFoundException;
 import com.kodilla.library.domain.exception.book.ErrorMessages;
 import com.kodilla.library.mapper.RentalMapper;
@@ -87,6 +86,6 @@ public class RentalService {
                 .map(i -> bookCopyRepository.findByBookAndStatus(i, Status.READY))
                 .flatMap(Collection::stream)
                 .findFirst()
-                .orElseThrow(() -> new BookCopyNotAvailableException(title));
+                .orElseThrow(() -> new EntityNotFoundException(title));
     }
 }
